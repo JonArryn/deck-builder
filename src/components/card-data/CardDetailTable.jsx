@@ -4,7 +4,7 @@ import Table from "react-bootstrap/Table";
 function CardDetailTable({ cardData }) {
   return (
     <div>
-      <Table striped bordered hover variant="dark" size="sm">
+      <Table bordered hover variant="dark" size="sm">
         <thead>
           <tr>
             <td colSpan={2} className="text-center">

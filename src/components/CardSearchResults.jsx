@@ -4,7 +4,10 @@ import ImageCard from "./image-card/ImageCard";
 
 function CardSearchResults({ searchResults }) {
   return (
-    <Container>
+    <Container
+      className="bg-dark bg-opacity-50 p-5"
+      style={{ borderRadius: "18px" }}
+    >
       <Row className="justify-content-between">
         {searchResults
           ? searchResults.map((result) => {

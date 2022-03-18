@@ -33,8 +33,11 @@ function CardDetailPage() {
   }
 
   return (
-    <Container className="mt-5">
-      <Row className="align-items-center justify-content-around bg-dark bg-opacity-50 p-3">
+    <Container
+      className="mt-5 bg-dark bg-opacity-50"
+      style={{ borderRadius: "18px" }}
+    >
+      <Row className="align-items-center justify-content-around p-3">
         <Col className="text-center">
           <img
             src={cardData.data.image_uris.normal}

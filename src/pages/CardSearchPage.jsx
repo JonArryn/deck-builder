@@ -1,47 +1,48 @@
 import React from "react";
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useIsMounted } from "../hooks/useIsMounted";
 import scryfall from "../services/scryfall";
 import Container from "react-bootstrap/Container";
 import CardSearchResults from "../components/CardSearchResults";
-import {
-  Row,
-  Col,
-  InputGroup,
-  FormControl,
-  Button,
-  Spinner,
-} from "react-bootstrap";
+import Form from "react-bootstrap/Form";
+import InputGroup from "react-bootstrap/InputGroup";
+import FormControl from "react-bootstrap/FormControl";
+import Button from "react-bootstrap/Button";
+import Spinner from "react-bootstrap/Spinner";
 
 function CardSearchPage() {
   const [isLoading, setIsLoading] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
   const [searchText, setSearchText] = useState("");
   const [searchSubmit, setSearchSubmit] = useState(false);
   const [searchResults, setSearchResults] = useState();
+  const [responseFinished, setResponseFinished] = useState(false);
 
   const isMounted = useIsMounted();
 
+  const submitSearch = () => {
+    setSearchSubmit(false);
+    setSearchParams({ q: searchText });
+  };
+
   useEffect(() => {
-    const submitSearch = async () => {
-      setIsLoading(true);
-      try {
-        const response = await scryfall.get(`/cards/search`, {
-          params: { q: searchText },
-        });
+    setIsLoading(true);
+    scryfall
+      .get(`/cards/search`, {
+        params: { q: searchParams.get("q") },
+      })
+      .then((response) => {
         if (isMounted) {
           setSearchResults(response.data);
         }
-        console.log(response.data);
-      } catch (error) {
+      })
+      .catch((error) => {
         console.log(error);
         setSearchResults({});
-      }
-      setIsLoading(false);
-      setSearchSubmit(false);
-    };
-
-    searchSubmit && submitSearch();
-  }, [searchSubmit, searchText, isMounted]);
+      })
+      .finally(setIsLoading(false), setResponseFinished(true));
+  }, [isMounted, searchParams]);
 
   // const submitSearch = async (searchQuery) => {
   //   setIsLoading(true);
@@ -75,14 +76,14 @@ function CardSearchPage() {
 
   return (
     <>
-      <Container className="py-5">
-        <form
+      <Container className="py-5 w-25">
+        <Form
           onSubmit={(event) => {
             event.preventDefault();
-            setSearchSubmit(true);
+            submitSearch();
           }}
         >
-          <InputGroup className="mb-3 container-sm">
+          <InputGroup className="mb-3">
             <FormControl
               placeholder="Search Cards..."
               onChange={(event) => setSearchText(event.target.value)}
@@ -91,7 +92,7 @@ function CardSearchPage() {
               {isLoading ? <Spinner animation="border" /> : "Search"}
             </Button>
           </InputGroup>
-        </form>
+        </Form>
       </Container>
       {searchResults && (
         <CardSearchResults searchResults={searchResults.data} />

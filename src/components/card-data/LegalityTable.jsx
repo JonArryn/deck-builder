@@ -4,11 +4,11 @@ import { Table, Badge } from "react-bootstrap";
 function LegalityTable({ legalities }) {
   return (
     <div>
-      <Table striped bordered hover variant="dark" size="sm">
+      <Table bordered hover variant="dark" size="sm">
         <thead>
           <tr>
             <td colSpan={4} className="text-center">
-              <h4>Legality</h4>
+              <h4>Format Legality</h4>
             </td>
           </tr>
           <tr>
