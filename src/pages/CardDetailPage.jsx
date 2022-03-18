@@ -1,6 +1,8 @@
 import React from "react";
-import { Container, Row, Col, ListGroup, Spinner } from "react-bootstrap";
+import { Container, Row, Col, Spinner } from "react-bootstrap";
 import scryfall from "../services/scryfall";
+import LegalityTable from "../components/card-data/LegalityTable";
+import CardDetailTable from "../components/card-data/CardDetailTable";
 import { useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 
@@ -31,28 +33,27 @@ function CardDetailPage() {
   }
 
   return (
-    <>
-      <Container fluid className="mt-5">
-        <Row className="text-center g-4">
-          <Col className="col-md">
-            <img
-              src={cardData.data.image_uris.normal}
-              alt="magic card"
-              className="img-fluid"
-              style={{ maxWidth: "25rem", borderRadius: "18px" }}
-            />
-          </Col>
-          <Col className="col-md">
-            <ListGroup>
-              <ListGroup.Item>Card Name: {cardData.data.name}</ListGroup.Item>
-              <ListGroup.Item>
-                Mana Cost: {cardData.data.mana_cost}
-              </ListGroup.Item>
-            </ListGroup>
-          </Col>
-        </Row>
-      </Container>
-    </>
+    <Container className="mt-5">
+      <Row className="align-items-center justify-content-around bg-dark bg-opacity-50 p-3">
+        <Col className="text-center">
+          <img
+            src={cardData.data.image_uris.normal}
+            alt="magic card"
+            className="img-fluid shadow-lg"
+            style={{
+              maxWidth: "350px",
+              borderRadius: "18px",
+            }}
+          />
+        </Col>
+        <Col>
+          <CardDetailTable cardData={cardData} />
+        </Col>
+        <Col>
+          <LegalityTable legalities={cardData.data.legalities} />
+        </Col>
+      </Row>
+    </Container>
   );
 }
 
