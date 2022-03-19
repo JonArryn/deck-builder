@@ -37,7 +37,7 @@ function CardDetailPage() {
       className="mt-5 bg-dark bg-opacity-50"
       style={{ borderRadius: "18px" }}
     >
-      <Row className="align-items-center justify-content-around p-3">
+      <Row className="align-items-center justify-content-around p-3 row-cols-xl-3 row-cols-lg-2 row-cols-md-1">
         <Col className="text-center">
           <img
             src={cardData.data.image_uris.normal}

@@ -4,7 +4,13 @@ import { Table, Badge } from "react-bootstrap";
 function LegalityTable({ legalities }) {
   return (
     <div>
-      <Table bordered hover variant="dark" size="sm">
+      <Table
+        bordered
+        hover
+        variant="dark"
+        size="sm"
+        style={{ fontSize: "0.97rem" }}
+      >
         <thead>
           <tr>
             <td colSpan={4} className="text-center">

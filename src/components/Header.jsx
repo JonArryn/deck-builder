@@ -1,11 +1,19 @@
 import React from "react";
-import { NavLink } from "react-router-dom";
+import { useState } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
 import Nav from "react-bootstrap/Nav";
 import Navbar from "react-bootstrap/Navbar";
 import Container from "react-bootstrap/Container";
+import Form from "react-bootstrap/Form";
+import InputGroup from "react-bootstrap/InputGroup";
+import FormControl from "react-bootstrap/FormControl";
+import Button from "react-bootstrap/Button";
 import { ReactComponent as MtgLogo } from "../assets/mtg-pentagon.svg";
 
 function Header() {
+  const [searchText, setSearchText] = useState("");
+  const navigate = useNavigate();
+
   return (
     <>
       <Navbar bg="dark" variant="dark" expand="md">
@@ -36,6 +44,28 @@ function Header() {
                 Public Decks
               </Nav.Link>
             </Nav>
+            <Form
+              onSubmit={(event) => {
+                event.preventDefault();
+                navigate(`/cards?q=${searchText}`);
+                setSearchText("");
+              }}
+            >
+              <InputGroup className="mb-3">
+                <FormControl
+                  placeholder="Search Cards..."
+                  onChange={(event) => setSearchText(event.target.value)}
+                  value={searchText}
+                />
+                <Button
+                  className="btn btn-warning"
+                  type="submit"
+                  disabled={false}
+                >
+                  Search
+                </Button>
+              </InputGroup>
+            </Form>
           </Navbar.Collapse>
         </Container>
       </Navbar>
