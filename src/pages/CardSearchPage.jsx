@@ -80,6 +80,7 @@ function CardSearchPage() {
           default:
         }
       }
+      return searchString;
     });
     console.log(searchString);
   };

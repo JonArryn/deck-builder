@@ -4,7 +4,7 @@ import HomePage from "./pages/HomePage";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import Container from "react-bootstrap/Container";
+
 import CardSearchPage from "./pages/CardSearchPage";
 import CardDetailPage from "./pages/CardDetailPage";
 
@@ -13,6 +13,7 @@ function App() {
     <>
       <Router>
         <Header />
+        <ToastContainer />
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/cards" element={<CardSearchPage />} />
