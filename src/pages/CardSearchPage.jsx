@@ -17,10 +17,10 @@ import { ReactComponent as ChevronDown } from "../assets/chevron-double-down.svg
 function CardSearchPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [searchText, setSearchText] = useState("");
-  const [searchQuery, setSearchQuery] = useState({
-    cardName: "",
-    oracleText: "",
-    typeLine: "",
+  const [advancedQuery, setAdvancedQuery] = useState({
+    card_name: "",
+    oracle: "",
+    type_line: "",
   });
   const [searchResults, setSearchResults] = useState();
   const [open, setOpen] = useState(false);
@@ -29,12 +29,6 @@ function CardSearchPage() {
 
   // implement axios cancel requests if search is in progress and on unmount
   // present empty state with a placeholder image
-
-  const submitSearch = () => {
-    if (searchParams) {
-      setSearchParams({ q: searchText });
-    }
-  };
 
   useEffect(() => {
     if (searchParams.get("q")) {
@@ -54,35 +48,47 @@ function CardSearchPage() {
     }
   }, [searchParams]);
 
-  // updates the searchQuery state variable as values are entered based on form input ids
+  // updates the advancedQuery state variable as values are entered based on form input ids
   const onAdvancedChange = (event) => {
-    setSearchQuery((prevState) => ({
+    setAdvancedQuery((prevState) => ({
       ...prevState,
       [event.target.id]: event.target.value,
     }));
-    onAdvancedSubmit();
-  };
-
-  // iterates over the searchQuery state variable to mutate its data into useable search string
-  // example search query string 'goblin (oracle:fire oracle: goblin)'
-  const onAdvancedSubmit = () => {
-    let searchString = [];
-    console.log(searchString);
-    Object.entries(searchQuery).map((entry) => {
+    // iterates over the advancedQuery state variable to mutate its data into useable search string
+    // example search query string 'goblin (oracle:fire oracle:goblin)'
+    let searchString = "";
+    // console.log(searchString);
+    Object.entries(advancedQuery).map((entry) => {
       if (entry[1]) {
         switch (entry[0]) {
-          case "cardName":
-            searchString.push(entry[1]);
+          case "card_name":
+            searchString += entry[1];
             break;
-          case "oracleText":
-            searchString.push(entry[1]);
+          case "oracle":
+            {
+              let newString = "";
+              let oracleText = newString
+                .concat("(oracle:", entry[1], ")")
+                .replaceAll(" ", " oracle:");
+
+              searchString += ` ${oracleText}`;
+            }
+            break;
+          case "type_line":
+            {
+              let newString = "";
+              let typeText = newString
+                .concat("(type:", entry[1], ")")
+                .replaceAll(" ", " oracle:");
+
+              searchString += ` ${typeText}`;
+            }
             break;
           default:
         }
       }
-      return searchString;
+      return setSearchText(() => searchString);
     });
-    console.log(searchString);
   };
 
   return (
@@ -92,14 +98,13 @@ function CardSearchPage() {
         <Form
           onSubmit={(event) => {
             event.preventDefault();
-            submitSearch();
+            setSearchParams({ q: searchText });
           }}
         >
           <InputGroup className="mb-1">
             <FormControl
               placeholder={open ? "Using Advanced Search" : "Search Cards..."}
               onChange={(event) => setSearchText(event.target.value)}
-              value={searchText}
               disabled={isLoading || open}
               required
             />
@@ -141,10 +146,16 @@ function CardSearchPage() {
         </div>
 
         <Collapse in={open} className="my-3">
-          <Form id="advanced-search">
+          <Form
+            id="advanced-search"
+            onSubmit={(event) => {
+              event.preventDefault();
+              setSearchParams({ q: searchText });
+            }}
+          >
             <Row>
               <Col>
-                <Form.Group as={Row} className="mb-3" controlId="cardName">
+                <Form.Group as={Row} className="mb-3" controlId="card_name">
                   <Form.Label column sm={2}>
                     Card Name
                   </Form.Label>
@@ -158,7 +169,7 @@ function CardSearchPage() {
                 </Form.Group>
               </Col>
               <Col>
-                <Form.Group as={Row} className="mb-3" controlId="oracleText">
+                <Form.Group as={Row} className="mb-3" controlId="oracle">
                   <Form.Label column sm={2}>
                     Oracle Text
                   </Form.Label>
@@ -172,7 +183,7 @@ function CardSearchPage() {
                 </Form.Group>
               </Col>
             </Row>
-            <Form.Group as={Row} className="mb-3" controlId="typeLine">
+            <Form.Group as={Row} className="mb-3" controlId="type_line">
               <Form.Label column sm={2}>
                 Type Line
               </Form.Label>
@@ -184,48 +195,11 @@ function CardSearchPage() {
                 />
               </Col>
             </Form.Group>
-            <fieldset>
-              <Form.Group as={Row} className="mb-3">
-                <Form.Label as="legend" column sm={2}>
-                  Radios
-                </Form.Label>
-                <Col sm={10}>
-                  <Form.Check
-                    type="radio"
-                    label="first radio"
-                    name="formHorizontalRadios"
-                    id="formHorizontalRadios1"
-                  />
-                  <Form.Check
-                    type="radio"
-                    label="second radio"
-                    name="formHorizontalRadios"
-                    id="formHorizontalRadios2"
-                  />
-                  <Form.Check
-                    type="radio"
-                    label="third radio"
-                    name="formHorizontalRadios"
-                    id="formHorizontalRadios3"
-                  />
-                </Col>
-              </Form.Group>
-            </fieldset>
-            <Form.Group
-              as={Row}
-              className="mb-3"
-              controlId="formHorizontalCheck"
-            >
-              <Col sm={{ span: 10, offset: 2 }}>
-                <Form.Check label="Remember me" />
-              </Col>
-            </Form.Group>
-
-            <Form.Group as={Row} className="mb-3">
-              <Col sm={{ span: 10, offset: 2 }}>
-                <Button type="submit">Sign in</Button>
-              </Col>
-            </Form.Group>
+            <div className="text-center">
+              <Button variant="success" type="submit">
+                Submit Search
+              </Button>
+            </div>
           </Form>
         </Collapse>
       </Container>
