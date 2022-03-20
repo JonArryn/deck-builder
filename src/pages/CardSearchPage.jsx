@@ -14,21 +14,24 @@ import Button from "react-bootstrap/Button";
 import Spinner from "react-bootstrap/Spinner";
 import { ReactComponent as ChevronDown } from "../assets/chevron-double-down.svg";
 
+//  //  TO DOS // //
+// implement axios cancel requests if is in progress and on unmount
+// present empty state with a placeholder image to allow time for card loads (optional really)
+// implement clear search fields and search params in url without a jarring affect on the user
+// implement remaining advanced search param options
+// update search text under simple search box field
+// implement pagination
+
 function CardSearchPage() {
   const [isLoading, setIsLoading] = useState(false);
-  const [searchText, setSearchText] = useState("");
-  const [advancedQuery, setAdvancedQuery] = useState({
+  const [usingAdvanced, setUsingAdvanced] = useState(false);
+  const [searchQuery, setSearchQuery] = useState({
     card_name: "",
     oracle: "",
     type_line: "",
   });
-  const [searchResults, setSearchResults] = useState();
-  const [open, setOpen] = useState(false);
-
   const [searchParams, setSearchParams] = useSearchParams();
-
-  // implement axios cancel requests if search is in progress and on unmount
-  // present empty state with a placeholder image
+  const [searchResults, setSearchResults] = useState();
 
   useEffect(() => {
     if (searchParams.get("q")) {
@@ -48,17 +51,19 @@ function CardSearchPage() {
     }
   }, [searchParams]);
 
-  // updates the advancedQuery state variable as values are entered based on form input ids
-  const onAdvancedChange = (event) => {
-    setAdvancedQuery((prevState) => ({
+  // updates the searchQuery state variable as values are entered based on form input ids
+  const onSearchEntry = (event) => {
+    setSearchQuery((prevState) => ({
       ...prevState,
-      [event.target.id]: event.target.value,
+      [event.target.dataset.field]: event.target.value,
     }));
-    // iterates over the advancedQuery state variable to mutate its data into useable search string
-    // example search query string 'goblin (oracle:fire oracle:goblin)'
+  };
+
+  // iterates over the searchQuery state variable to mutate its data into useable search string
+  // example search query string 'goblin (oracle:fire oracle:goblin)'
+  const createSearchString = () => {
     let searchString = "";
-    // console.log(searchString);
-    Object.entries(advancedQuery).map((entry) => {
+    Object.entries(searchQuery).map((entry) => {
       if (entry[1]) {
         switch (entry[0]) {
           case "card_name":
@@ -87,8 +92,9 @@ function CardSearchPage() {
           default:
         }
       }
-      return setSearchText(() => searchString);
+      return searchString;
     });
+    return searchString;
   };
 
   return (
@@ -98,20 +104,25 @@ function CardSearchPage() {
         <Form
           onSubmit={(event) => {
             event.preventDefault();
-            setSearchParams({ q: searchText });
+            setSearchParams({ q: createSearchString() });
           }}
         >
           <InputGroup className="mb-1">
             <FormControl
-              placeholder={open ? "Using Advanced Search" : "Search Cards..."}
-              onChange={(event) => setSearchText(event.target.value)}
-              disabled={isLoading || open}
+              placeholder={
+                usingAdvanced ? "Using Advanced Search" : "Search Cards..."
+              }
+              onChange={onSearchEntry}
+              disabled={isLoading || usingAdvanced}
+              data-field="card_name"
+              // \/ \/ oohh clever
+              value={usingAdvanced ? "" : searchQuery.card_name}
               required
             />
             <Button
               className="btn btn-dark"
               type="submit"
-              disabled={isLoading || open}
+              disabled={isLoading || usingAdvanced}
             >
               {isLoading ? <Spinner animation="border" /> : "Search"}
             </Button>
@@ -127,77 +138,83 @@ function CardSearchPage() {
       {/* Advanced Search */}
 
       <Container
-        className="mb-3 w-75 bg-dark bg-opacity-50 text-light border-warning pb-2"
+        className="mb-3 w-75 text-light border-warning pb-2"
         style={{ borderRadius: "18px" }}
       >
         <div className="text-center py-3">
           <Button
             onClick={() => {
-              setOpen(!open);
-              setSearchText("");
+              setUsingAdvanced(!usingAdvanced);
             }}
             variant="outline-warning"
             className="text-light"
             aria-controls="advanced-search"
-            aria-expanded={open}
+            aria-expanded={usingAdvanced}
           >
             Advanced Search <ChevronDown />
           </Button>
         </div>
 
-        <Collapse in={open} className="my-3">
+        <Collapse
+          in={usingAdvanced}
+          className="my-3 p-3 bg-dark bg-opacity-50"
+          style={{ borderRadius: "12px" }}
+        >
           <Form
             id="advanced-search"
             onSubmit={(event) => {
               event.preventDefault();
-              setSearchParams({ q: searchText });
+              setSearchParams({ q: createSearchString() });
             }}
           >
             <Row>
               <Col>
-                <Form.Group as={Row} className="mb-3" controlId="card_name">
+                <Form.Group as={Row} className="mb-3">
                   <Form.Label column sm={2}>
                     Card Name
                   </Form.Label>
                   <Col sm={10}>
                     <Form.Control
+                      data-field="card_name"
                       type="text"
                       placeholder="Any word the card name contains"
-                      onChange={onAdvancedChange}
+                      onChange={onSearchEntry}
                     />
                   </Col>
                 </Form.Group>
               </Col>
               <Col>
-                <Form.Group as={Row} className="mb-3" controlId="oracle">
+                <Form.Group as={Row} className="mb-3">
                   <Form.Label column sm={2}>
                     Oracle Text
                   </Form.Label>
                   <Col sm={10}>
                     <Form.Control
+                      data-field="oracle"
                       type="text"
                       placeholder="Any text found in the rules box"
-                      onChange={onAdvancedChange}
+                      onChange={onSearchEntry}
                     />
                   </Col>
                 </Form.Group>
               </Col>
             </Row>
-            <Form.Group as={Row} className="mb-3" controlId="type_line">
+            <Form.Group as={Row} className="mb-3">
               <Form.Label column sm={2}>
                 Type Line
               </Form.Label>
               <Col sm={10}>
                 <Form.Control
+                  data-field="type_line"
                   type="text"
                   placeholder="Any text found in the rules box"
-                  onChange={onAdvancedChange}
+                  onChange={onSearchEntry}
                 />
               </Col>
             </Form.Group>
             <div className="text-center">
-              <Button variant="success" type="submit">
-                Submit Search
+              <Button variant="success" type="submit" disabled={isLoading}>
+                {isLoading ? <Spinner animation="border" /> : "Submit Search"}
               </Button>
             </div>
           </Form>
