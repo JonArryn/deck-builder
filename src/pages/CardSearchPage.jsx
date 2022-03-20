@@ -33,7 +33,9 @@ function CardSearchPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchResults, setSearchResults] = useState();
 
+  // submits search query to scryfall API when searchParams are set
   useEffect(() => {
+    // checks to ensure there is an actual query in the URL search params
     if (searchParams.get("q")) {
       setIsLoading(true);
       scryfall
@@ -60,7 +62,7 @@ function CardSearchPage() {
   };
 
   // iterates over the searchQuery state variable to mutate its data into useable search string
-  // example search query string 'goblin (oracle:fire oracle:goblin)'
+  // example search query string 'goblin (oracle:fire oracle:goblin) (type:creature type:artifact)'
   const createSearchString = () => {
     let searchString = "";
     Object.entries(searchQuery).map((entry) => {
@@ -84,7 +86,7 @@ function CardSearchPage() {
               let newString = "";
               let typeText = newString
                 .concat("(type:", entry[1], ")")
-                .replaceAll(" ", " oracle:");
+                .replaceAll(" ", " type:");
 
               searchString += ` ${typeText}`;
             }
@@ -92,6 +94,7 @@ function CardSearchPage() {
           default:
         }
       }
+      // is there a way to avoid this double return?
       return searchString;
     });
     return searchString;
