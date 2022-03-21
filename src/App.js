@@ -16,7 +16,7 @@ function App() {
         <ToastContainer />
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/cards" element={<CardSearchPage />} />
+          <Route path="/cards/search" element={<CardSearchPage />} />
           <Route path="/cards/:cardId" element={<CardDetailPage />} />
         </Routes>
       </Router>

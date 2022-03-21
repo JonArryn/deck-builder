@@ -31,7 +31,7 @@ function Header() {
               <Nav.Link to="/" as={NavLink}>
                 Home
               </Nav.Link>
-              <Nav.Link to="/cards" as={NavLink}>
+              <Nav.Link to="/cards/search" as={NavLink}>
                 Card Search
               </Nav.Link>
               <Nav.Link to="/deck-manager" as={NavLink}>
@@ -47,7 +47,7 @@ function Header() {
             <Form
               onSubmit={(event) => {
                 event.preventDefault();
-                navigate(`/cards?q=${searchText}`);
+                navigate(`/cards/search?query=true&card_name=${searchText}`);
                 setSearchText("");
               }}
             >

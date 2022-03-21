@@ -13,6 +13,14 @@ function CardDetailPage() {
   const params = useParams();
   const { cardId } = params;
 
+  // // TODOS // //
+  // replace all icon text with icon SVGs
+  // add pricing data from either scryfall or TCGplayer API
+  // clean up look of tables
+  // clean up gaps
+  // add quote text
+  // add support for double faced cards
+
   useEffect(() => {
     const getCardById = (id) => {
       scryfall
