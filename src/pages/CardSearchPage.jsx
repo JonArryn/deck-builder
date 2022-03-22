@@ -1,5 +1,5 @@
 import React from "react";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import scryfall from "../services/scryfall";
 import Container from "react-bootstrap/Container";
@@ -24,7 +24,6 @@ import { ReactComponent as ChevronDown } from "../assets/chevron-double-down.svg
 // implement remaining advanced search param options
 // update search text under simple search box field
 // add helper text to advanced search fields
-// change route to cards/search
 // add support for doublefaced cards
 // implement pagination
 // implement sorting
@@ -35,94 +34,99 @@ import { ReactComponent as ChevronDown } from "../assets/chevron-double-down.svg
 function CardSearchPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [usingAdvanced, setUsingAdvanced] = useState(false);
-  const [simpleQuery, setSimpleQuery] = useState({ card_name: "" });
-  const [advancedQuery, setAdvancedQuery] = useState({
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlSearchQuery = Object.fromEntries([...searchParams]);
+  const [basicQuery, setBasicQuery] = useState("");
+  const [searchForm, setSearchForm] = useState({
+    card_name: "",
     oracle: "",
     type_line: "",
   });
-  const [searchSubmit, setSearchSubmit] = useState(true);
-  const [searchParams, setSearchParams] = useSearchParams();
   const [searchResults, setSearchResults] = useState();
 
-  // get cards takes state data for search query and makes mutates it into a string that's usable by the API
-  // after which an axios GET request is sent to the API /cards/search endpoint using that string
-  const getCards = useCallback(() => {
-    let apiSearchArr = [];
-    // checks if simpleQuery.card_name is not an empty string, if not it pushes to the array
-    // simpleQuery.card_name is set by the useEffect hook down below getCards
+  const isInitialMount = useRef(true);
 
-    // // // THIS is where the bug is showing itself, when this function runs, simpleQuery.card_name is still "" - but it is in the state, so something about the asynchronous behavior of state is not making the state available by the time this function runs // // //
-    if (simpleQuery.card_name !== "") {
-      apiSearchArr.push(simpleQuery.card_name);
-    }
-    // loops over entries in advancedQuery and pushes them to apiSearchArr
-    Object.entries(advancedQuery).map((entry) => {
-      if (entry[1]) {
-        switch (entry[0]) {
-          case "oracle_text":
-            apiSearchArr.push(
-              `(oracle:${entry[1]})`.replaceAll(" ", " oracle:")
-            );
-            break;
-          case "type_line":
-            apiSearchArr.push(`(type:${entry[1]})`.replaceAll(" ", " type:"));
-            break;
-          default:
-            break;
-        }
-      }
-      return entry;
-    });
-    setIsLoading(true);
-    // API get request. apiSearchArr is joined with spaces which is what the API needs
-    scryfall
-      .get(`/cards/search?q=${apiSearchArr.join(" ")}`)
-      .then((response) => {
-        setSearchResults(response.data);
-      })
-      .catch((error) => {
-        console.log(error);
-        setSearchResults({});
-      })
-      .finally(() => setIsLoading(false));
-  }, [advancedQuery, simpleQuery]);
-
-  useEffect(() => {
-    // if statement guard clause only runs use effect if there is a search query and searchSubmit state variable is true to prevent infinite loops
-    if (searchParams.get("query") && searchSubmit) {
-      // sets simpleQuery.card_name with the card_name searchParam
-      setSimpleQuery({ card_name: searchParams.get("card_name") });
-      getCards();
-      setSearchSubmit(false);
-    }
-  }, [searchParams, searchSubmit, getCards]);
-
-  // updates the advancedQuery state variable as values are entered based on form input ids
-  const onSearchEntry = (event) => {
-    setAdvancedQuery((prevState) => ({
-      ...prevState,
-      [event.target.dataset.field]: event.target.value,
-    }));
-  };
-
-  // upon form submission, submitSearchQuery creates my own search params and sets them in the URL
-  const submitSearchQuery = () => {
+  // upon form submission, submitSearchForm creates my own search params and sets them in the URL
+  const submitSearchForm = () => {
     let newParams = {};
-    if (simpleQuery.card_name) {
-      newParams["card_name"] = simpleQuery.card_name;
+    if (basicQuery && basicQuery !== "") {
+      newParams["card_name"] = basicQuery;
     }
-    Object.entries(advancedQuery).map((entry) => {
+    Object.entries(searchForm).map((entry) => {
       if (entry[1]) {
         newParams[entry[0]] = entry[1];
       }
       return entry;
     });
     setSearchParams({
-      query: true,
       ...newParams,
     });
-    // sets searchSubmit state variable to true so that the useEffect hook above will run
-    setSearchSubmit(true);
+    getCards(dirtify(basicQuery, searchForm));
+  };
+
+  const dirtify = useCallback((search = "") => {
+    let apiSearchArr = [];
+
+    if (search && search !== "") {
+      Object.entries(search).map((entry) => {
+        if (entry[1]) {
+          switch (entry[0]) {
+            case "card_name":
+              apiSearchArr.push(entry[1]);
+              break;
+            case "oracle_text":
+              apiSearchArr.push(
+                `(oracle:${entry[1]})`.replaceAll(" ", " oracle:")
+              );
+              break;
+            case "type_line":
+              apiSearchArr.push(`(type:${entry[1]})`.replaceAll(" ", " type:"));
+              break;
+            default:
+              break;
+          }
+        }
+        return entry;
+      });
+    }
+    return apiSearchArr.join(" ");
+  }, []);
+
+  const getCards = useCallback((searchString) => {
+    if (searchString && searchString !== "") {
+      setIsLoading(true);
+      // API get request. apiSearchArr is joined with spaces which is what the API needs
+      scryfall
+        .get(`/cards/search?q=${searchString}`)
+        .then((response) => {
+          setSearchResults(response.data);
+        })
+        .catch((error) => {
+          console.log(error);
+          setSearchResults({});
+        })
+        .finally(() => setIsLoading(false));
+    }
+  }, []);
+
+  // only fires if a search came from external
+  useEffect(() => {
+    if (isInitialMount.current && urlSearchQuery !== "") {
+      setSearchForm((prevState) => ({
+        ...prevState,
+        ...urlSearchQuery,
+      }));
+      getCards(dirtify(urlSearchQuery));
+      isInitialMount.current = false;
+    }
+  }, [getCards, basicQuery, dirtify, urlSearchQuery, searchForm]);
+
+  // updates the searchForm state variable as values are entered based on form input ids
+  const onSearchEntry = (event) => {
+    setSearchForm((prevState) => ({
+      ...prevState,
+      [event.target.dataset.field]: event.target.value,
+    }));
   };
 
   return (
@@ -132,7 +136,7 @@ function CardSearchPage() {
         <Form
           onSubmit={(event) => {
             event.preventDefault();
-            submitSearchQuery();
+            submitSearchForm();
           }}
         >
           <InputGroup className="mb-1">
@@ -141,12 +145,12 @@ function CardSearchPage() {
                 usingAdvanced ? "Using Advanced Search" : "Search Cards..."
               }
               onChange={(event) => {
-                setSimpleQuery({ card_name: event.target.value });
+                setBasicQuery(event.target.value);
               }}
               disabled={isLoading || usingAdvanced}
               data-field="card_name"
               // \/ \/ oohh clever
-              value={usingAdvanced ? "" : simpleQuery.card_name}
+              value={usingAdvanced ? "" : basicQuery}
               required
             />
             <Button
@@ -157,11 +161,6 @@ function CardSearchPage() {
               {isLoading ? <Spinner animation="border" /> : "Search"}
             </Button>
           </InputGroup>
-          <Form.Text className="text-light">
-            {searchParams.get("q") === null
-              ? ""
-              : `Simple Card Search: ${searchParams.get("q")}`}
-          </Form.Text>
         </Form>
       </Container>
 
@@ -194,7 +193,7 @@ function CardSearchPage() {
             id="advanced-search"
             onSubmit={(event) => {
               event.preventDefault();
-              submitSearchQuery();
+              submitSearchForm();
             }}
           >
             <Row>
@@ -208,10 +207,10 @@ function CardSearchPage() {
                       data-field="card_name"
                       type="text"
                       placeholder="Any word the card name contains"
-                      value={simpleQuery.card_name}
-                      onChange={(event) =>
-                        setSimpleQuery({ card_name: event.target.value })
-                      }
+                      value={basicQuery}
+                      onChange={(event) => {
+                        setBasicQuery(event.target.value);
+                      }}
                     />
                   </Col>
                 </Form.Group>
@@ -226,7 +225,7 @@ function CardSearchPage() {
                       data-field="oracle"
                       type="text"
                       placeholder="Any text found in the rules box"
-                      value={advancedQuery.oracle}
+                      value={searchForm.oracle}
                       onChange={onSearchEntry}
                     />
                   </Col>
@@ -242,7 +241,7 @@ function CardSearchPage() {
                   data-field="type_line"
                   type="text"
                   placeholder="Any text found in the rules box"
-                  value={advancedQuery.type_line}
+                  value={searchForm.type_line}
                   onChange={onSearchEntry}
                 />
               </Col>
