@@ -36,7 +36,6 @@ function CardSearchPage() {
   const [usingAdvanced, setUsingAdvanced] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const urlSearchQuery = Object.fromEntries([...searchParams]);
-  const [basicQuery, setBasicQuery] = useState("");
   const [searchForm, setSearchForm] = useState({
     card_name: "",
     oracle: "",
@@ -49,9 +48,6 @@ function CardSearchPage() {
   // upon form submission, submitSearchForm creates my own search params and sets them in the URL
   const submitSearchForm = () => {
     let newParams = {};
-    if (basicQuery && basicQuery !== "") {
-      newParams["card_name"] = basicQuery;
-    }
     Object.entries(searchForm).map((entry) => {
       if (entry[1]) {
         newParams[entry[0]] = entry[1];
@@ -61,7 +57,7 @@ function CardSearchPage() {
     setSearchParams({
       ...newParams,
     });
-    getCards(dirtify(basicQuery, searchForm));
+    getCards(dirtify(searchForm));
   };
 
   const dirtify = useCallback((search = "") => {
@@ -119,7 +115,7 @@ function CardSearchPage() {
       getCards(dirtify(urlSearchQuery));
       isInitialMount.current = false;
     }
-  }, [getCards, basicQuery, dirtify, urlSearchQuery, searchForm]);
+  }, [getCards, dirtify, urlSearchQuery, searchForm]);
 
   // updates the searchForm state variable as values are entered based on form input ids
   const onSearchEntry = (event) => {
@@ -144,13 +140,10 @@ function CardSearchPage() {
               placeholder={
                 usingAdvanced ? "Using Advanced Search" : "Search Cards..."
               }
-              onChange={(event) => {
-                setBasicQuery(event.target.value);
-              }}
+              onChange={onSearchEntry}
               disabled={isLoading || usingAdvanced}
               data-field="card_name"
-              // \/ \/ oohh clever
-              value={usingAdvanced ? "" : basicQuery}
+              value={usingAdvanced ? "" : searchForm.card_name}
               required
             />
             <Button
@@ -207,10 +200,8 @@ function CardSearchPage() {
                       data-field="card_name"
                       type="text"
                       placeholder="Any word the card name contains"
-                      value={basicQuery}
-                      onChange={(event) => {
-                        setBasicQuery(event.target.value);
-                      }}
+                      value={searchForm.card_name}
+                      onChange={onSearchEntry}
                     />
                   </Col>
                 </Form.Group>
