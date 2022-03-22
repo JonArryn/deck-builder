@@ -38,7 +38,7 @@ function CardSearchPage() {
   const urlSearchQuery = Object.fromEntries([...searchParams]);
   const [searchForm, setSearchForm] = useState({
     card_name: "",
-    oracle: "",
+    oracle_text: "",
     type_line: "",
   });
   const [searchResults, setSearchResults] = useState();
@@ -85,6 +85,7 @@ function CardSearchPage() {
         return entry;
       });
     }
+    console.log(apiSearchArr);
     return apiSearchArr.join(" ");
   }, []);
 
@@ -213,7 +214,7 @@ function CardSearchPage() {
                   </Form.Label>
                   <Col sm={10}>
                     <Form.Control
-                      data-field="oracle"
+                      data-field="oracle_text"
                       type="text"
                       placeholder="Any text found in the rules box"
                       value={searchForm.oracle}
