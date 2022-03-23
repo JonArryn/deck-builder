@@ -47,7 +47,7 @@ function Header() {
             <Form
               onSubmit={(event) => {
                 event.preventDefault();
-                navigate(`/cards/search?card_name=${searchText}`);
+                navigate(`/cards/search?external=true&card_name=${searchText}`);
                 setSearchText("");
               }}
             >

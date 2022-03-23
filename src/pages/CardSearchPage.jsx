@@ -36,18 +36,24 @@ function CardSearchPage() {
   const [usingAdvanced, setUsingAdvanced] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const urlSearchQuery = Object.fromEntries([...searchParams]);
-  const [searchForm, setSearchForm] = useState({
-    card_name: "",
-    oracle_text: "",
-    type_line: "",
-  });
+  const [searchForm, setSearchForm] = useState(
+    {
+      card_name: urlSearchQuery.card_name,
+      oracle_text: urlSearchQuery.oracle_text,
+      type_line: urlSearchQuery.type_line,
+    } || {}
+  );
   const [searchResults, setSearchResults] = useState();
 
-  const isInitialMount = useRef(true);
+  // exists to prevent infinite loops in useEffect functions
+  const isNewSearch = useRef(true);
 
   // upon form submission, submitSearchForm creates my own search params and sets them in the URL
+  // calls get cards to fetch API data
+  // only fires from form buttons on the component
   const submitSearchForm = () => {
     let newParams = {};
+    isNewSearch.current = true;
     Object.entries(searchForm).map((entry) => {
       if (entry[1]) {
         newParams[entry[0]] = entry[1];
@@ -57,10 +63,14 @@ function CardSearchPage() {
     setSearchParams({
       ...newParams,
     });
-    getCards(dirtify(searchForm));
+    getCards(createApiSearchStr(searchForm));
   };
 
-  const dirtify = useCallback((search = "") => {
+  // creates a search string to submit to the API and returns it
+  // iterates over an object that is passed into it -->
+  // pushes the object entries into an array -->
+  // returns string
+  const createApiSearchStr = useCallback((search = "") => {
     let apiSearchArr = [];
 
     if (search && search !== "") {
@@ -85,10 +95,11 @@ function CardSearchPage() {
         return entry;
       });
     }
-    console.log(apiSearchArr);
     return apiSearchArr.join(" ");
   }, []);
 
+  // fetches seach results from API
+  // takes in search string created by the createApiSearchStr function
   const getCards = useCallback((searchString) => {
     if (searchString && searchString !== "") {
       setIsLoading(true);
@@ -106,17 +117,35 @@ function CardSearchPage() {
     }
   }, []);
 
-  // only fires if a search came from external
+  // only fires if a search came from external component
+  // external search components insert a search param into the url: external=true -->
+  // this is because the other useEffect only runs on mount and will not run while external:true is in the urlSearchQuery -->
+  // sets isNewSearch useRef to true in case user uses external search component while searchPage component is mounted -->
+  // deletes the external search param from urlSearchQuery -->
+  // sets new URL searchParams so that external=true is removed
   useEffect(() => {
-    if (isInitialMount.current && urlSearchQuery !== "") {
-      setSearchForm((prevState) => ({
-        ...prevState,
+    if (urlSearchQuery.external) {
+      isNewSearch.current = true;
+      delete urlSearchQuery.external;
+      setSearchParams({
         ...urlSearchQuery,
-      }));
-      getCards(dirtify(urlSearchQuery));
-      isInitialMount.current = false;
+      });
     }
-  }, [getCards, dirtify, urlSearchQuery, searchForm]);
+  }, [urlSearchQuery, setSearchParams]);
+
+  // only runs if: isNewSearch useRef is true --> urlSeachQuery object as entries --> external:true is not in urlSearchQuery
+  // runs getCards with createApiSearchStr(urlSearchQuery) passed in to get the string returned and call the API
+  // sets isNewSearch to false to prevent infinite loops
+  useEffect(() => {
+    if (
+      isNewSearch.current &&
+      Object.keys(urlSearchQuery) !== 0 &&
+      !urlSearchQuery.external
+    ) {
+      getCards(createApiSearchStr(urlSearchQuery));
+    }
+    isNewSearch.current = false;
+  }, [getCards, createApiSearchStr, urlSearchQuery]);
 
   // updates the searchForm state variable as values are entered based on form input ids
   const onSearchEntry = (event) => {
