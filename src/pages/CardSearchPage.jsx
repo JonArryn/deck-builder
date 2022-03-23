@@ -1,5 +1,6 @@
 import React from "react";
 import { useState, useEffect, useCallback, useRef } from "react";
+// import axios from "axios";
 import { useSearchParams } from "react-router-dom";
 import scryfall from "../services/scryfall";
 import Container from "react-bootstrap/Container";
@@ -47,6 +48,14 @@ function CardSearchPage() {
 
   // exists to prevent infinite loops in useEffect functions
   const isNewSearch = useRef(true);
+
+  // // //  Future Axios Cancel
+  // const controller = useMemo(() => {
+  //   new AbortController();
+  // }, []);
+  // const CancelToken = axios.CancelToken;
+  // const source = CancelToken.source();
+  // // //
 
   // upon form submission, submitSearchForm creates my own search params and sets them in the URL
   // calls get cards to fetch API data
@@ -109,13 +118,15 @@ function CardSearchPage() {
         .then((response) => {
           setSearchResults(response.data);
         })
-        .catch((error) => {
-          console.log(error);
+        .catch((thrown) => {
+          console.log(thrown);
           setSearchResults({});
         })
         .finally(() => setIsLoading(false));
     }
   }, []);
+
+  // // detect if search came from external component and set search params // //
 
   // only fires if a search came from external component
   // external search components insert a search param into the url: external=true -->
@@ -130,8 +141,14 @@ function CardSearchPage() {
       setSearchParams({
         ...urlSearchQuery,
       });
+      setSearchForm((prevState) => ({
+        ...prevState,
+        ...urlSearchQuery,
+      }));
     }
   }, [urlSearchQuery, setSearchParams]);
+
+  // // get search results on page load // //
 
   // only runs if: isNewSearch useRef is true --> urlSeachQuery object as entries --> external:true is not in urlSearchQuery
   // runs getCards with createApiSearchStr(urlSearchQuery) passed in to get the string returned and call the API
