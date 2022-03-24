@@ -273,7 +273,7 @@ function CardSearchPage() {
                       data-field="oracle_text"
                       type="text"
                       placeholder="Any text found in the rules box"
-                      value={searchForm.oracle}
+                      value={searchForm.oracle_text}
                       onChange={onSearchEntry}
                     />
                   </Col>
