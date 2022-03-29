@@ -1,5 +1,5 @@
 import React from "react";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 // import axios from "axios";
 import { useSearchParams } from "react-router-dom";
 import scryfall from "../services/scryfall";
@@ -32,32 +32,16 @@ function CardSearchPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [usingAdvanced, setUsingAdvanced] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
-  const urlSearchQuery = Object.fromEntries([...searchParams]);
-  const [searchForm, setSearchForm] = useState(
-    {
-      card_name: urlSearchQuery.card_name,
-      oracle_text: urlSearchQuery.oracle_text,
-      type_line: urlSearchQuery.type_line,
-    } || {}
+  const urlSearchQuery = useMemo(
+    () => ({
+      card_name: searchParams.get("card_name") || "",
+      oracle_text: searchParams.get("oracle_text") || "",
+      type_line: searchParams.get("type_line") || "",
+    }),
+    [searchParams]
   );
+  const [searchForm, setSearchForm] = useState({ ...urlSearchQuery });
   const [searchResults, setSearchResults] = useState();
-
-  //  //  //  exists to prevent infinite loops in useEffect functions
-  const isNewSearchRef = useRef(true);
-  const isMountedRef = useRef(false);
-  const controllerRef = useRef();
-  // // //
-
-  // // //  to cancel axios requests // // //
-  // also sets ref for isMounted and returns on dismount
-  useEffect(() => {
-    isMountedRef.current = true;
-    return () => {
-      isMountedRef.current = false;
-      controllerRef.current && controllerRef.current.abort();
-    };
-  }, []);
-  // // //
 
   // // // updates the searchForm state variable as values are entered based on form input ids // // //
   const onSearchEntry = (event) => {
@@ -68,12 +52,11 @@ function CardSearchPage() {
   };
   // // //
 
-  // upon form submission, submitSearchForm creates my own search params and sets them in the URL // // //
-  // calls get cards to fetch API data
-  // only fires from form buttons on the component
+  // Sets new search params upon submission // // //
+  // creates array from searchForm object --> maps to skip over null entries -->
+  // sets new searchParams with valid form entries
   const submitSearchForm = () => {
     let newParams = {};
-    isNewSearchRef.current = true;
     Object.entries(searchForm).map((entry) => {
       if (entry[1]) {
         newParams[entry[0]] = entry[1];
@@ -90,95 +73,81 @@ function CardSearchPage() {
   // iterates over an object that is passed into it -->
   // pushes the object entries into an array -->
   // returns string
-  const createApiSearchStr = useCallback((search = "") => {
+  const createApiSearchStr = (search = "") => {
     let apiSearchArr = [];
 
-    if (search && search !== "") {
-      Object.entries(search).map((entry) => {
-        if (entry[1]) {
-          switch (entry[0]) {
-            case "card_name":
-              apiSearchArr.push(entry[1]);
-              break;
-            case "oracle_text":
-              apiSearchArr.push(
-                `(oracle:${entry[1]})`.replaceAll(" ", " oracle:")
-              );
-              break;
-            case "type_line":
-              apiSearchArr.push(`(type:${entry[1]})`.replaceAll(" ", " type:"));
-              break;
-            default:
-              break;
-          }
+    Object.entries(search).map((entry) => {
+      if (entry[1]) {
+        switch (entry[0]) {
+          case "card_name":
+            apiSearchArr.push(entry[1]);
+            break;
+          case "oracle_text":
+            apiSearchArr.push(
+              `(oracle:${entry[1]})`.replaceAll(" ", " oracle:")
+            );
+            break;
+          case "type_line":
+            apiSearchArr.push(`(type:${entry[1]})`.replaceAll(" ", " type:"));
+            break;
+          default:
+            break;
         }
-        return entry;
-      });
-    }
+      }
+      return entry;
+    });
     return apiSearchArr.join(" ");
-  }, []);
+  };
   // // //
 
   // // // fetches seach results from API // // //
-  // takes in search string created by the createApiSearchStr function
-  const getCards = useCallback((searchString) => {
-    if (searchString && searchString !== "") {
-      setIsLoading(true);
-      controllerRef.current && controllerRef.current.abort();
-      // sets new AbortController
-      controllerRef.current = new AbortController();
-      scryfall
-        .get(`/cards/search?q=${searchString}`, {
-          signal: controllerRef.current.signal,
-        })
-        .then((response) => {
-          setSearchResults(response.data);
-        })
-        .catch((error) => {
-          console.log(error.message);
-          setSearchResults({});
-        })
-        .finally(() => setIsLoading(false));
-    }
+  // takes in search object -->
+  // passes to createApiSearchStr to get search string to submit to API
+  // controls isLoading and AbortController
+  const getCards = useCallback((searchObj = "") => {
+    const searchString = createApiSearchStr(searchObj);
+    setIsLoading(true);
+    controllerRef.current && controllerRef.current.abort();
+    // sets new AbortController
+    controllerRef.current = new AbortController();
+    scryfall
+      .get(`/cards/search?q=${searchString}`, {
+        signal: controllerRef.current.signal,
+      })
+      .then((response) => {
+        setSearchResults(response.data);
+      })
+      .catch((error) => {
+        console.log(error.message);
+        setSearchResults({});
+      })
+      .finally(() => setIsLoading(false));
   }, []);
   // // //
 
-  // // // detect if search came from external component and set search params // // //
-  // only fires if a search came from external component
-  // external search components insert a search param into the url: external=true -->
-  // this is because the other useEffect only runs on mount and will not run while external:true is in the urlSearchQuery -->
-  // sets isNewSearchRef useRef to true in case user uses external search component while searchPage component is mounted -->
-  // deletes the external search param from urlSearchQuery -->
-  // sets new URL searchParams so that external=true is removed
+  // // //  to cancel axios requests // // //
+  // also sets ref for isMounted and returns on dismount
+  const isMountedRef = useRef(false);
+  const controllerRef = useRef();
+
   useEffect(() => {
-    if (urlSearchQuery.external) {
-      delete urlSearchQuery.external;
-      setSearchParams({
-        ...urlSearchQuery,
-      });
-      setSearchForm((prevState) => ({
-        ...prevState,
-        ...urlSearchQuery,
-      }));
-      isNewSearchRef.current = true;
-    }
-  }, [urlSearchQuery, setSearchParams]);
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      controllerRef.current && controllerRef.current.abort();
+    };
+  }, []);
   // // //
 
   // // // get search results on page load // // //
-  // only runs if: isNewSearchRef useRef is true --> urlSeachQuery object as entries --> external:true is not in urlSearchQuery
-  // runs getCards with createApiSearchStr(urlSearchQuery) passed in to get the string returned and call the API
-  // sets isNewSearchRef to false to prevent infinite loops
+  // only runs if: urlSearchQuery has values
+  // runs getCards with urlSearchQuery passed in
   useEffect(() => {
-    if (
-      isNewSearchRef.current &&
-      Object.keys(urlSearchQuery) !== 0 &&
-      !urlSearchQuery.external
-    ) {
-      getCards(createApiSearchStr(urlSearchQuery));
+    if (!Object.values(urlSearchQuery).every((entry) => entry === "")) {
+      getCards(urlSearchQuery);
+      setSearchForm(() => ({ ...urlSearchQuery }));
     }
-    isNewSearchRef.current = false;
-  }, [getCards, createApiSearchStr, urlSearchQuery]);
+  }, [urlSearchQuery, getCards]);
   // // //
 
   //  //  //  Render
@@ -273,7 +242,7 @@ function CardSearchPage() {
                       data-field="oracle_text"
                       type="text"
                       placeholder="Any text found in the rules box"
-                      value={searchForm.oracle_text}
+                      value={searchForm.oracle}
                       onChange={onSearchEntry}
                     />
                   </Col>

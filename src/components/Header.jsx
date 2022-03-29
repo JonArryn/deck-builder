@@ -16,7 +16,7 @@ function Header() {
 
   return (
     <>
-      <Navbar bg="dark" variant="dark" expand="md">
+      <Navbar sticky="top" bg="dark" variant="dark" expand="md">
         <Container fluid className="p-3">
           <Navbar.Brand as={NavLink} to="/">
             <MtgLogo
@@ -47,7 +47,7 @@ function Header() {
             <Form
               onSubmit={(event) => {
                 event.preventDefault();
-                navigate(`/cards/search?external=true&card_name=${searchText}`);
+                navigate(`/cards/search?card_name=${searchText}`);
                 setSearchText("");
               }}
             >
