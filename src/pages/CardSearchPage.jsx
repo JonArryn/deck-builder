@@ -154,6 +154,7 @@ function CardSearchPage() {
             active={number === pagination.active_page}
             data-page={number}
             onClick={(event) => {
+              window.stop();
               setPagination((prevState) => ({
                 ...prevState,
                 active_page: +event.target.dataset.page,
