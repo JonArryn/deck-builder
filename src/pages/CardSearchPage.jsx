@@ -205,9 +205,17 @@ function CardSearchPage() {
 
   // calls updatePages fn
   useEffect(() => {
-    updatePages();
-    updateUrlPageParams();
-  }, [updatePages, updateUrlPageParams]);
+    if (!Object.values(urlSearchQuery).every((entry) => entry === "")) {
+      updatePages();
+      updateUrlPageParams();
+    }
+  }, [urlSearchQuery, updatePages, updateUrlPageParams]);
+
+  // Add pagination to params from external searches
+  // useEffect(() => {
+  //   if (Object.values(urlPageQuery).every((entry) => entry === "")) {
+  //   }
+  // }, []);
   //////// END PAGINATION
 
   //////// FORM ENTRY/SUBMISSION
@@ -389,7 +397,7 @@ function CardSearchPage() {
               </Form.Select>
             </Col>
             <Col>
-              <div className="text-end">Pages</div>
+              <div className="text-end text-light">Pages</div>
               <Pagination size="sm" className="mb-0 justify-content-end">
                 {pages.map((page) => page)}
               </Pagination>
@@ -422,7 +430,7 @@ function CardSearchPage() {
               </Form.Select>
             </Col>
             <Col>
-              <div className="text-end">Pages</div>
+              <div className="text-end text-light">Pages</div>
               <Pagination size="sm" className="mb-0 justify-content-end">
                 {pages.map((page) => page)}
               </Pagination>
