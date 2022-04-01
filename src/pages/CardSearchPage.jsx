@@ -132,11 +132,10 @@ function CardSearchPage() {
 
   useEffect(() => {
     if (!Object.values(urlSearchQuery).every((entry) => entry === "")) {
-      console.log("getCard uE fired");
       getCards(urlSearchQuery);
       setSearchForm(() => ({ ...urlSearchQuery }));
     }
-  }, [urlSearchQuery, getCards]);
+  }, [searchParams, urlSearchQuery, getCards]);
   //////// END GET CARDS
 
   //////// PAGINATION
@@ -162,30 +161,22 @@ function CardSearchPage() {
   }, [pagination, setSearchParams, searchParams]);
 
   // onClick handler for page number items (stored in pages = useState([]))
-  const onPageChange = useCallback(
-    (event) => {
-      window.stop();
-      setPagination((prevState) => ({
-        ...prevState,
-        active_page: +event.target.dataset.page,
-      }));
-      updateUrlPageParams();
-    },
-    [updateUrlPageParams]
-  );
+  const onPageChange = useCallback((event) => {
+    window.stop();
+    setPagination((prevState) => ({
+      ...prevState,
+      active_page: +event.target.dataset.page,
+    }));
+  }, []);
 
   // // // updates pagination state when perPage option is changed
-  const onPerPageChange = useCallback(
-    (event) => {
-      setPagination((prevState) => ({
-        ...prevState,
-        per_page: event.target.value,
-        active_page: 1,
-      }));
-      updateUrlPageParams();
-    },
-    [updateUrlPageParams]
-  );
+  const onPerPageChange = useCallback((event) => {
+    setPagination((prevState) => ({
+      ...prevState,
+      per_page: event.target.value,
+      active_page: 1,
+    }));
+  }, []);
 
   // // // Calculates total page numbers and creates page jsx
   // for loop creates page number jsx elements and pushes them to an empty array (newPages)
@@ -215,7 +206,8 @@ function CardSearchPage() {
   // calls updatePages fn
   useEffect(() => {
     updatePages();
-  }, [updatePages]);
+    updateUrlPageParams();
+  }, [updatePages, updateUrlPageParams]);
   //////// END PAGINATION
 
   //////// FORM ENTRY/SUBMISSION
