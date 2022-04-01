@@ -59,6 +59,7 @@ function CardSearchPage() {
     active_page: 1,
     pages: [],
   });
+  const [pages, setPages] = useState([]);
 
   // // //
 
@@ -107,6 +108,7 @@ function CardSearchPage() {
   // passes to createApiSearchStr to get search string to submit to API
   // sets isLoading and AbortController
   const getCards = useCallback((searchObj = "") => {
+    console.log("getCards fired");
     const searchString = createApiSearchStr(searchObj);
     setIsLoading(true);
     controllerRef.current && controllerRef.current.abort();
@@ -130,6 +132,7 @@ function CardSearchPage() {
 
   useEffect(() => {
     if (!Object.values(urlSearchQuery).every((entry) => entry === "")) {
+      console.log("getCard uE fired");
       getCards(urlSearchQuery);
       setSearchForm(() => ({ ...urlSearchQuery }));
     }
@@ -138,45 +141,76 @@ function CardSearchPage() {
 
   //////// PAGINATION
 
+  // updates url params with new search params and adds pagination params
+  const updateUrlSearchParams = useCallback(
+    (newParamObject) => {
+      setSearchParams({
+        ...newParamObject,
+        ...pagination,
+      });
+    },
+    [setSearchParams, pagination]
+  );
+
+  // updates url params with current search params and updates pagination params
+  const updateUrlPageParams = useCallback(() => {
+    const currentParams = Object.fromEntries([...searchParams]);
+    setSearchParams({
+      ...currentParams,
+      ...pagination,
+    });
+  }, [pagination, setSearchParams, searchParams]);
+
+  // onClick handler for page number items (stored in pages = useState([]))
+  const onPageChange = useCallback(
+    (event) => {
+      window.stop();
+      setPagination((prevState) => ({
+        ...prevState,
+        active_page: +event.target.dataset.page,
+      }));
+      updateUrlPageParams();
+    },
+    [updateUrlPageParams]
+  );
+
+  // // // updates pagination state when perPage option is changed
+  const onPerPageChange = useCallback(
+    (event) => {
+      setPagination((prevState) => ({
+        ...prevState,
+        per_page: event.target.value,
+        active_page: 1,
+      }));
+      updateUrlPageParams();
+    },
+    [updateUrlPageParams]
+  );
+
   // // // Calculates total page numbers and creates page jsx
-  // for loop creates page number jsx elements and pushes them to an empty array (pages)
-  // setPagination with new page jsx elements
+  // for loop creates page number jsx elements and pushes them to an empty array (newPages)
+  // setPages state with new page jsx elements
   const updatePages = useCallback(() => {
     if (searchResults) {
       let totalPages = Math.ceil(
         searchResults.data?.length / pagination.per_page
       );
-      let pages = [];
+      let newPages = [];
       for (let number = 1; number <= totalPages; number++) {
-        pages.push(
+        newPages.push(
           <Pagination.Item
             key={number}
             active={number === pagination.active_page}
             data-page={number}
-            onClick={(event) => {
-              window.stop();
-              setPagination((prevState) => ({
-                ...prevState,
-                active_page: +event.target.dataset.page,
-              }));
-            }}
+            onClick={onPageChange}
           >
             {number}
           </Pagination.Item>
         );
       }
-      setPagination((prevState) => ({ ...prevState, pages: pages }));
+      setPages(() => newPages);
     }
-  }, [searchResults, pagination.active_page, pagination.per_page]);
-
-  // // // updates pagination state when perPage option is changed
-  const onPerPageChange = (event) => {
-    setPagination((prevState) => ({
-      ...prevState,
-      per_page: event.target.value,
-      active_page: 1,
-    }));
-  };
+  }, [searchResults, pagination, onPageChange]);
 
   // calls updatePages fn
   useEffect(() => {
@@ -206,10 +240,8 @@ function CardSearchPage() {
       }
       return entry;
     });
-    setSearchParams({
-      ...newParams,
-    });
     setPagination((prevState) => ({ ...prevState, active_page: 1 }));
+    updateUrlSearchParams(newParams);
   };
   //////// END FORM ENTRY/SUBMISSION
 
@@ -367,7 +399,7 @@ function CardSearchPage() {
             <Col>
               <div className="text-end">Pages</div>
               <Pagination size="sm" className="mb-0 justify-content-end">
-                {pagination.pages.map((page) => page)}
+                {pages.map((page) => page)}
               </Pagination>
             </Col>
           </Row>
@@ -400,7 +432,7 @@ function CardSearchPage() {
             <Col>
               <div className="text-end">Pages</div>
               <Pagination size="sm" className="mb-0 justify-content-end">
-                {pagination.pages.map((page) => page)}
+                {pages.map((page) => page)}
               </Pagination>
             </Col>
           </Row>
