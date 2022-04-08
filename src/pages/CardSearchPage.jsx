@@ -1,9 +1,6 @@
 import React from "react";
 // hooks
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { useSearchParams } from "react-router-dom";
-// axios
-import scryfall from "../services/scryfall";
+import { useState, useEffect, useRef, useContext } from "react";
 // bootstrap
 import Container from "react-bootstrap/Container";
 import Collapse from "react-bootstrap/Collapse";
@@ -17,6 +14,7 @@ import Button from "react-bootstrap/Button";
 import Spinner from "react-bootstrap/Spinner";
 import Pagination from "react-bootstrap/Pagination";
 import { ReactComponent as ChevronDown } from "../assets/chevron-double-down.svg";
+import CardSearchContext from "../context/cardSearch/CardSearchContext";
 
 //  //  TODOS // //
 // implement pagination
@@ -33,192 +31,36 @@ import { ReactComponent as ChevronDown } from "../assets/chevron-double-down.svg
 // present empty state with a placeholder image to allow time for card loads (optional really)
 // // // //
 
+// // // pagination problem:
+// need to set pagination search params when search queries are made
+// if search comes from external source, default pagination params must be included
+// pagination params must not be present in URL if no search has been made
+// page search params must update with each form change in pagination component
+
+// // // remove dependency from URL
+// populate searchForm with currentSearch
+// use URL to indicate searches from navigation bar
+
 function CardSearchPage() {
-  const [isLoading, setIsLoading] = useState(false);
+  // CONTEXT
+  const {
+    isLoading,
+    controllerRef,
+    currentSearch,
+    pagination,
+    onPageClick,
+    pageJumpRef,
+    searchResults,
+    submitNewSearch,
+    onPageEntry,
+    onPerPageChange,
+  } = useContext(CardSearchContext);
   const [usingAdvanced, setUsingAdvanced] = useState(false);
-  const [searchParams, setSearchParams] = useSearchParams();
-  const urlSearchQuery = useMemo(
-    () => ({
-      card_name: searchParams.get("card_name") || "",
-      oracle_text: searchParams.get("oracle_text") || "",
-      type_line: searchParams.get("type_line") || "",
-    }),
-    [searchParams]
-  );
-  // const urlPageQuery = useMemo(
-  //   () => ({
-  //     per_page: searchParams.get("per_page") || "",
-  //     active_page: searchParams.get("active_page") || "",
-  //   }),
-  //   [searchParams]
-  // );
-  const [searchForm, setSearchForm] = useState({ ...urlSearchQuery });
-  const [searchResults, setSearchResults] = useState();
-  const [pagination, setPagination] = useState({
-    per_page: 10,
-    active_page: 1,
-    pages: [],
+  const [searchForm, setSearchForm] = useState({
+    card_name: "",
+    oracle_text: "",
+    type_line: "",
   });
-  const [pages, setPages] = useState([]);
-
-  // // //
-
-  // current problem:
-  // need to set pagination search params when search queries are made
-  // if search comes from external source, default pagination params must be included
-  // pagination params must not be present in URL if no search has been made
-  // page search params must update with each form change in pagination component
-
-  //////// GET CARDS
-
-  // // // creates a search string to submit to the API and returns it // // //
-  // iterates over an object that is passed into it -->
-  // pushes the object entries into an array -->
-  // returns string
-  const createApiSearchStr = (search = "") => {
-    let apiSearchArr = [];
-
-    Object.entries(search).map((entry) => {
-      if (entry[1]) {
-        switch (entry[0]) {
-          case "card_name":
-            apiSearchArr.push(entry[1]);
-            break;
-          case "oracle_text":
-            apiSearchArr.push(
-              `(oracle:${entry[1]})`.replaceAll(" ", " oracle:")
-            );
-            break;
-          case "type_line":
-            apiSearchArr.push(`(type:${entry[1]})`.replaceAll(" ", " type:"));
-            break;
-          default:
-            break;
-        }
-      }
-      return entry;
-    });
-    return apiSearchArr.join(" ");
-  };
-
-  // // //
-
-  // // // fetches seach results from API // // //
-  // takes in search object -->
-  // passes to createApiSearchStr to get search string to submit to API
-  // sets isLoading and AbortController
-  const getCards = useCallback((searchObj = "") => {
-    console.log("getCards fired");
-    const searchString = createApiSearchStr(searchObj);
-    setIsLoading(true);
-    controllerRef.current && controllerRef.current.abort();
-    // sets new AbortController
-    controllerRef.current = new AbortController();
-    scryfall
-      .get(`/cards/search?q=${searchString}`, {
-        signal: controllerRef.current.signal,
-      })
-      .then((response) => {
-        setSearchResults(response.data);
-      })
-      .catch((error) => {
-        console.log(error.message);
-        setSearchResults({});
-      })
-      .finally(() => setIsLoading(false));
-  }, []);
-
-  // // // get search results on page load // // //
-
-  useEffect(() => {
-    if (!Object.values(urlSearchQuery).every((entry) => entry === "")) {
-      getCards(urlSearchQuery);
-      setSearchForm(() => ({ ...urlSearchQuery }));
-    }
-  }, [searchParams, urlSearchQuery, getCards]);
-  //////// END GET CARDS
-
-  //////// PAGINATION
-
-  // updates url params with new search params and adds pagination params
-  const updateUrlSearchParams = useCallback(
-    (newParamObject) => {
-      setSearchParams({
-        ...newParamObject,
-        ...pagination,
-      });
-    },
-    [setSearchParams, pagination]
-  );
-
-  // updates url params with current search params and updates pagination params
-  const updateUrlPageParams = useCallback(() => {
-    const currentParams = Object.fromEntries([...searchParams]);
-    setSearchParams({
-      ...currentParams,
-      ...pagination,
-    });
-  }, [pagination, setSearchParams, searchParams]);
-
-  // onClick handler for page number items (stored in pages = useState([]))
-  const onPageChange = useCallback((event) => {
-    window.stop();
-    setPagination((prevState) => ({
-      ...prevState,
-      active_page: +event.target.dataset.page,
-    }));
-  }, []);
-
-  // // // updates pagination state when perPage option is changed
-  const onPerPageChange = useCallback((event) => {
-    setPagination((prevState) => ({
-      ...prevState,
-      per_page: event.target.value,
-      active_page: 1,
-    }));
-  }, []);
-
-  // // // Calculates total page numbers and creates page jsx
-  // for loop creates page number jsx elements and pushes them to an empty array (newPages)
-  // setPages state with new page jsx elements
-  const updatePages = useCallback(() => {
-    if (searchResults) {
-      let totalPages = Math.ceil(
-        searchResults.data?.length / pagination.per_page
-      );
-      let newPages = [];
-      for (let number = 1; number <= totalPages; number++) {
-        newPages.push(
-          <Pagination.Item
-            key={number}
-            active={number === pagination.active_page}
-            data-page={number}
-            onClick={onPageChange}
-          >
-            {number}
-          </Pagination.Item>
-        );
-      }
-      setPages(() => newPages);
-    }
-  }, [searchResults, pagination, onPageChange]);
-
-  // calls updatePages fn
-  useEffect(() => {
-    if (!Object.values(urlSearchQuery).every((entry) => entry === "")) {
-      updatePages();
-      updateUrlPageParams();
-    }
-  }, [urlSearchQuery, updatePages, updateUrlPageParams]);
-
-  // Add pagination to params from external searches
-  // useEffect(() => {
-  //   if (Object.values(urlPageQuery).every((entry) => entry === "")) {
-  //   }
-  // }, []);
-  //////// END PAGINATION
-
-  //////// FORM ENTRY/SUBMISSION
 
   // // // updates the searchForm state variable as values are entered based on form input ids // // //
   const onSearchEntry = (event) => {
@@ -229,34 +71,23 @@ function CardSearchPage() {
   };
   // // //
 
-  // Sets new search params upon submission // // //
-  // creates array from searchForm object --> maps to skip over null entries -->
-  // sets new searchParams with valid form entries
-  const submitSearchForm = () => {
-    let newParams = {};
-    Object.entries(searchForm).map((entry) => {
-      if (entry[1]) {
-        newParams[entry[0]] = entry[1];
-      }
-      return entry;
-    });
-    setPagination((prevState) => ({ ...prevState, active_page: 1 }));
-    updateUrlSearchParams(newParams);
-  };
-  //////// END FORM ENTRY/SUBMISSION
+  useEffect(() => {
+    console.log(currentSearch);
+    setSearchForm({ ...currentSearch });
+  }, [currentSearch]);
 
   // // //  to cancel axios requests // // //
   // also sets ref for isMounted and returns on dismount
   const isMountedRef = useRef(false);
-  const controllerRef = useRef();
 
   useEffect(() => {
     isMountedRef.current = true;
+    const abortController = controllerRef.current;
     return () => {
       isMountedRef.current = false;
-      controllerRef.current && controllerRef.current.abort();
+      abortController && abortController.abort();
     };
-  }, []);
+  }, [controllerRef]);
   // // //
 
   //  //  //  Render
@@ -267,25 +98,19 @@ function CardSearchPage() {
         <Form
           onSubmit={(event) => {
             event.preventDefault();
-            submitSearchForm();
+            submitNewSearch(searchForm);
           }}
         >
           <InputGroup className="mb-1">
             <FormControl
-              placeholder={
-                usingAdvanced ? "Using Advanced Search" : "Search Cards..."
-              }
+              placeholder={usingAdvanced ? "Using Advanced Search" : "Search Cards..."}
               onChange={onSearchEntry}
               disabled={isLoading || usingAdvanced}
               data-field="card_name"
               value={usingAdvanced ? "" : searchForm.card_name}
               required
             />
-            <Button
-              className="btn btn-dark"
-              type="submit"
-              disabled={isLoading || usingAdvanced}
-            >
+            <Button className="btn btn-dark" type="submit" disabled={isLoading || usingAdvanced}>
               {isLoading ? <Spinner animation="border" /> : "Search"}
             </Button>
           </InputGroup>
@@ -321,7 +146,7 @@ function CardSearchPage() {
             id="advanced-search"
             onSubmit={(event) => {
               event.preventDefault();
-              submitSearchForm();
+              submitNewSearch(searchForm);
             }}
           >
             <Row>
@@ -351,7 +176,7 @@ function CardSearchPage() {
                       data-field="oracle_text"
                       type="text"
                       placeholder="Any text found in the rules box"
-                      value={searchForm.oracle}
+                      value={searchForm.oracle_text}
                       onChange={onSearchEntry}
                     />
                   </Col>
@@ -380,15 +205,19 @@ function CardSearchPage() {
           </Form>
         </Collapse>
       </Container>
-      {searchResults?.data && (
-        <Container>
-          <Row className="justify-content-between align-items-center mb-2">
-            <Col xs lg={2}>
+      {searchResults && (
+        <Container className="mb-2">
+          <Row className="justify-content-end g-3">
+            <Col lg="auto" className="d-flex justify-content-sm-center align-self-end m-0 me-auto">
+              <h4 className="text-light">Total Results {searchResults.length}</h4>
+            </Col>
+            <Col lg="auto" className="d-flex align-items-sm-center flex-column">
               <div className="text-light">Cards Per Page</div>
               <Form.Select
                 size="sm"
                 onChange={onPerPageChange}
                 value={pagination.per_page}
+                style={{ width: "115px" }}
               >
                 <option>10</option>
                 <option>15</option>
@@ -396,10 +225,39 @@ function CardSearchPage() {
                 <option>25</option>
               </Form.Select>
             </Col>
-            <Col>
-              <div className="text-end text-light">Pages</div>
-              <Pagination size="sm" className="mb-0 justify-content-end">
-                {pages.map((page) => page)}
+
+            <Col lg="auto" className="align-self-end d-flex justify-content-sm-center">
+              <Pagination size="sm" className="mb-0">
+                <Pagination.First
+                  disabled={pagination.active_page === 1}
+                  data-navigate="first-page"
+                  onClick={(event) => onPageClick(event)}
+                />
+                <Pagination.Prev
+                  disabled={pagination.active_page === 1}
+                  data-navigate="prev-page"
+                  onClick={(event) => onPageClick(event)}
+                />
+                <FormControl
+                  size="sm"
+                  ref={pageJumpRef}
+                  defaultValue={pagination.active_page}
+                  onChange={(event) => onPageEntry(+event.target.value, pagination.total_pages)}
+                  style={{ width: "40px" }}
+                />
+                <p className="bg-dark text-light px-2 mb-0">
+                  <span className="align-middle">of {pagination.total_pages} Pages</span>
+                </p>
+                <Pagination.Next
+                  disabled={pagination.active_page === pagination.total_pages}
+                  data-navigate="next-page"
+                  onClick={(event) => onPageClick(event)}
+                />
+                <Pagination.Last
+                  disabled={pagination.active_page === pagination.total_pages}
+                  data-navigate="last-page"
+                  onClick={(event) => onPageClick(event)}
+                />
               </Pagination>
             </Col>
           </Row>
@@ -408,35 +266,10 @@ function CardSearchPage() {
 
       {searchResults && (
         <CardSearchResults
-          searchResults={searchResults.data}
+          searchResults={searchResults}
           activePage={pagination.active_page}
           resultsPerPage={pagination.per_page}
         />
-      )}
-      {searchResults?.data && (
-        <Container>
-          <Row className="justify-content-between align-items-center mb-2">
-            <Col xs lg={2}>
-              <div className="text-light">Cards Per Page</div>
-              <Form.Select
-                size="sm"
-                onChange={onPerPageChange}
-                value={pagination.per_page}
-              >
-                <option>10</option>
-                <option>15</option>
-                <option>20</option>
-                <option>25</option>
-              </Form.Select>
-            </Col>
-            <Col>
-              <div className="text-end text-light">Pages</div>
-              <Pagination size="sm" className="mb-0 justify-content-end">
-                {pages.map((page) => page)}
-              </Pagination>
-            </Col>
-          </Row>
-        </Container>
       )}
     </>
   );

@@ -8,9 +8,11 @@ import "react-toastify/dist/ReactToastify.css";
 import CardSearchPage from "./pages/CardSearchPage";
 import CardDetailPage from "./pages/CardDetailPage";
 
+import { CardSearchProvider } from "./context/cardSearch/CardSearchContext";
+
 function App() {
   return (
-    <>
+    <CardSearchProvider>
       <Router>
         <Header />
         <ToastContainer />
@@ -20,7 +22,7 @@ function App() {
           <Route path={`/cards/:cardId`} element={<CardDetailPage />} />
         </Routes>
       </Router>
-    </>
+    </CardSearchProvider>
   );
 }
 
