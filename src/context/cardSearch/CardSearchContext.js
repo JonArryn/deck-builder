@@ -40,17 +40,40 @@ export const CardSearchProvider = ({ children }) => {
     // sets new AbortController
     controllerRef.current = new AbortController();
     scryfall
-      .get(`/cards/search?q=${searchString}`, {
+      .get(`/cards/search`, {
+        params: { q: searchString },
         signal: controllerRef.current.signal,
       })
       .then((response) => {
+        console.log(response);
         setSearchResults(response.data.data);
+        return response;
+      })
+      .then((response) => {
+        if (response.data.has_more) {
+          getCardsNextPage(response.data.next_page);
+        }
       })
       .catch((error) => {
         console.log(error.message);
         setSearchResults({});
       })
       .finally(() => setIsLoading(false));
+  };
+
+  const getCardsNextPage = (pageUri) => {
+    scryfall
+      .get(pageUri)
+      .then((response) => {
+        console.log(response);
+        setSearchResults((prevState) => [...prevState, ...response.data.data]);
+        return response;
+      })
+      .then((response) => {
+        console.log(response);
+        if (response.data.has_more) getCardsNextPage(response.data.next_page);
+      })
+      .catch((error) => console.log(error.message));
   };
 
   const createApiSearchStr = (searchObj) => {

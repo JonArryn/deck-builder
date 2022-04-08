@@ -238,6 +238,10 @@ function CardSearchPage() {
                   data-navigate="prev-page"
                   onClick={(event) => onPageClick(event)}
                 />
+                <div className="bg-dark text-light px-2">
+                  <span className="align-middle">Page</span>
+                </div>
+
                 <FormControl
                   size="sm"
                   ref={pageJumpRef}
@@ -246,7 +250,7 @@ function CardSearchPage() {
                   style={{ width: "40px" }}
                 />
                 <p className="bg-dark text-light px-2 mb-0">
-                  <span className="align-middle">of {pagination.total_pages} Pages</span>
+                  <span className="align-middle">of {pagination.total_pages}</span>
                 </p>
                 <Pagination.Next
                   disabled={pagination.active_page === pagination.total_pages}
