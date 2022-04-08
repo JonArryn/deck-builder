@@ -217,6 +217,7 @@ function CardSearchPage() {
                 onChange={onPerPageChange}
                 value={pagination.per_page}
                 style={{ width: "115px" }}
+                className="bg-dark text-light"
               >
                 <option>10</option>
                 <option>15</option>
@@ -237,7 +238,7 @@ function CardSearchPage() {
                   data-navigate="prev-page"
                   onClick={(event) => onPageClick(event)}
                 />
-                <div className="bg-dark text-light px-2">
+                <div className="bg-warning text-dark px-2">
                   <span className="align-middle">Page</span>
                 </div>
 
@@ -247,8 +248,9 @@ function CardSearchPage() {
                   defaultValue={pagination.active_page}
                   onChange={(event) => onPageEntry(+event.target.value, pagination.total_pages)}
                   style={{ width: "40px" }}
+                  className="bg-dark text-light border-warning"
                 />
-                <p className="bg-dark text-light px-2 mb-0">
+                <p className="bg-warning text-dark px-2 mb-0">
                   <span className="align-middle">of {pagination.total_pages}</span>
                 </p>
                 <Pagination.Next
