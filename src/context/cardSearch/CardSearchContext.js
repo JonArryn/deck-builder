@@ -45,7 +45,6 @@ export const CardSearchProvider = ({ children }) => {
         signal: controllerRef.current.signal,
       })
       .then((response) => {
-        console.log(response);
         setSearchResults(response.data.data);
         return response;
       })
@@ -65,12 +64,10 @@ export const CardSearchProvider = ({ children }) => {
     scryfall
       .get(pageUri)
       .then((response) => {
-        console.log(response);
         setSearchResults((prevState) => [...prevState, ...response.data.data]);
         return response;
       })
       .then((response) => {
-        console.log(response);
         if (response.data.has_more) getCardsNextPage(response.data.next_page);
       })
       .catch((error) => console.log(error.message));

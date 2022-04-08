@@ -72,7 +72,6 @@ function CardSearchPage() {
   // // //
 
   useEffect(() => {
-    console.log(currentSearch);
     setSearchForm({ ...currentSearch });
   }, [currentSearch]);
 
