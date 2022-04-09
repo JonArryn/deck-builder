@@ -1,5 +1,5 @@
 import React from "react";
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import Nav from "react-bootstrap/Nav";
 import Navbar from "react-bootstrap/Navbar";
@@ -9,9 +9,11 @@ import InputGroup from "react-bootstrap/InputGroup";
 import FormControl from "react-bootstrap/FormControl";
 import Button from "react-bootstrap/Button";
 import { ReactComponent as MtgLogo } from "../assets/mtg-pentagon.svg";
+import CardSearchContext from "../context/cardSearch/CardSearchContext";
 
 function Header() {
-  const [searchText, setSearchText] = useState("");
+  const { submitNewSearch } = useContext(CardSearchContext);
+  const [searchText, setSearchText] = useState({ card_name: "" });
   const navigate = useNavigate();
 
   return (
@@ -19,10 +21,7 @@ function Header() {
       <Navbar sticky="top" bg="dark" variant="dark" expand="md">
         <Container fluid className="p-3">
           <Navbar.Brand as={NavLink} to="/">
-            <MtgLogo
-              className="d-inline-block align-top"
-              style={{ width: "30", height: "30" }}
-            />{" "}
+            <MtgLogo className="d-inline-block align-top" style={{ width: "30", height: "30" }} />{" "}
             MTG Deck Builder
           </Navbar.Brand>
           <Navbar.Toggle aria-controls="basic-navbar-nav" />
@@ -47,21 +46,18 @@ function Header() {
             <Form
               onSubmit={(event) => {
                 event.preventDefault();
-                navigate(`/cards/search?card_name=${searchText}`);
-                setSearchText("");
+                navigate(`/cards/search`);
+                submitNewSearch(searchText);
+                setSearchText({ card_name: "" });
               }}
             >
               <InputGroup className="mb-3">
                 <FormControl
                   placeholder="Search Cards..."
-                  onChange={(event) => setSearchText(event.target.value)}
-                  value={searchText}
+                  onChange={(event) => setSearchText({ card_name: event.target.value })}
+                  value={searchText.card_name}
                 />
-                <Button
-                  className="btn btn-warning"
-                  type="submit"
-                  disabled={false}
-                >
+                <Button className="btn btn-warning" type="submit" disabled={false}>
                   Search
                 </Button>
               </InputGroup>

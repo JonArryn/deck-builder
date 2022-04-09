@@ -12,12 +12,12 @@ import InputGroup from "react-bootstrap/InputGroup";
 import FormControl from "react-bootstrap/FormControl";
 import Button from "react-bootstrap/Button";
 import Spinner from "react-bootstrap/Spinner";
+import Badge from "react-bootstrap/Badge";
 import Stack from "react-bootstrap/Stack";
 import { ReactComponent as ChevronDown } from "../assets/chevron-double-down.svg";
 import CardSearchContext from "../context/cardSearch/CardSearchContext";
 
 //  //  TODOS // //
-// implement pagination
 // show active search form entries under search bar
 // implement sorting
 // toastify search errors
@@ -30,15 +30,6 @@ import CardSearchContext from "../context/cardSearch/CardSearchContext";
 // add some text explaining how to use the search functions
 // present empty state with a placeholder image to allow time for card loads (optional really)
 // // // //
-
-// // // pagination problem:
-// need to set pagination search params when search queries are made
-// if search comes from external source, default pagination params must be included
-// pagination params must not be present in URL if no search has been made
-// page search params must update with each form change in pagination component
-
-// // // remove dependency from URL
-// use URL to indicate searches from navigation bar
 
 function CardSearchPage() {
   // CONTEXT
@@ -195,11 +186,21 @@ function CardSearchPage() {
                 />
               </Col>
             </Form.Group>
-            <div className="text-center">
+            <Stack direction="horizontal" className="justify-content-center" gap={3}>
               <Button variant="success" type="submit" disabled={isLoading}>
                 {isLoading ? <Spinner animation="border" /> : "Submit Search"}
               </Button>
-            </div>
+              <div className="vr text-light"></div>
+              <Button
+                variant="danger"
+                className="align-end"
+                onClick={() => {
+                  setSearchForm(() => ({ card_name: "", oracle_text: "", type_line: "" }));
+                }}
+              >
+                Clear
+              </Button>
+            </Stack>
           </Form>
         </Collapse>
       </Container>
@@ -207,7 +208,9 @@ function CardSearchPage() {
         <Container className="mb-2">
           <Row className="justify-content-end g-3">
             <Col lg="auto" className="d-flex justify-content-sm-center align-self-end m-0 me-auto">
-              <h4 className="text-light">Total Results {searchResults.length}</h4>
+              <Badge bg="warning" className="text-dark">
+                <h6 className="m-1">Total Results {searchResults.length}</h6>
+              </Badge>
             </Col>
             <Col lg="auto" className="d-flex align-items-sm-center flex-column">
               <div className="text-light">Cards Per Page</div>
@@ -233,6 +236,7 @@ function CardSearchPage() {
                   disabled={pagination.active_page === 1}
                   data-navigate="first-page"
                   onClick={(event) => onPageClick(event)}
+                  className="border-light"
                 >
                   &laquo;
                 </Button>
@@ -242,10 +246,11 @@ function CardSearchPage() {
                   disabled={pagination.active_page === 1}
                   data-navigate="prev-page"
                   onClick={(event) => onPageClick(event)}
+                  className="border-light"
                 >
                   &lsaquo;
                 </Button>
-                <div className="bg-warning text-dark px-2 h-100">
+                <div className="bg-warning text-dark px-2 h-100 rounded">
                   <span className="align-middle">Page</span>
                 </div>
 
@@ -257,7 +262,7 @@ function CardSearchPage() {
                   style={{ width: "40px" }}
                   className="bg-dark text-light border-light"
                 />
-                <div className="bg-warning text-dark px-2 mb-0 h-100">
+                <div className="bg-warning text-dark px-2 mb-0 h-100 rounded">
                   <span className="align-middle">of {pagination.total_pages}</span>
                 </div>
                 <Button
@@ -266,6 +271,7 @@ function CardSearchPage() {
                   disabled={pagination.active_page === pagination.total_pages}
                   data-navigate="next-page"
                   onClick={(event) => onPageClick(event)}
+                  className="border-light"
                 >
                   &rsaquo;
                 </Button>
@@ -275,6 +281,7 @@ function CardSearchPage() {
                   disabled={pagination.active_page === pagination.total_pages}
                   data-navigate="last-page"
                   onClick={(event) => onPageClick(event)}
+                  className="border-light"
                 >
                   &raquo;
                 </Button>
