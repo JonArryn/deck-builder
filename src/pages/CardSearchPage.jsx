@@ -12,7 +12,7 @@ import InputGroup from "react-bootstrap/InputGroup";
 import FormControl from "react-bootstrap/FormControl";
 import Button from "react-bootstrap/Button";
 import Spinner from "react-bootstrap/Spinner";
-import Pagination from "react-bootstrap/Pagination";
+import Stack from "react-bootstrap/Stack";
 import { ReactComponent as ChevronDown } from "../assets/chevron-double-down.svg";
 import CardSearchContext from "../context/cardSearch/CardSearchContext";
 
@@ -38,7 +38,6 @@ import CardSearchContext from "../context/cardSearch/CardSearchContext";
 // page search params must update with each form change in pagination component
 
 // // // remove dependency from URL
-// populate searchForm with currentSearch
 // use URL to indicate searches from navigation bar
 
 function CardSearchPage() {
@@ -227,18 +226,26 @@ function CardSearchPage() {
             </Col>
 
             <Col lg="auto" className="align-self-end d-flex justify-content-sm-center">
-              <Pagination size="sm" className="mb-0">
-                <Pagination.First
+              <Stack direction="horizontal" size="sm" className="m-0">
+                <Button
+                  size="sm"
+                  variant="dark"
                   disabled={pagination.active_page === 1}
                   data-navigate="first-page"
                   onClick={(event) => onPageClick(event)}
-                />
-                <Pagination.Prev
+                >
+                  &laquo;
+                </Button>
+                <Button
+                  size="sm"
+                  variant="dark"
                   disabled={pagination.active_page === 1}
                   data-navigate="prev-page"
                   onClick={(event) => onPageClick(event)}
-                />
-                <div className="bg-warning text-dark px-2">
+                >
+                  &lsaquo;
+                </Button>
+                <div className="bg-warning text-dark px-2 h-100">
                   <span className="align-middle">Page</span>
                 </div>
 
@@ -248,22 +255,30 @@ function CardSearchPage() {
                   defaultValue={pagination.active_page}
                   onChange={(event) => onPageEntry(+event.target.value, pagination.total_pages)}
                   style={{ width: "40px" }}
-                  className="bg-dark text-light border-warning"
+                  className="bg-dark text-light border-light"
                 />
-                <p className="bg-warning text-dark px-2 mb-0">
+                <div className="bg-warning text-dark px-2 mb-0 h-100">
                   <span className="align-middle">of {pagination.total_pages}</span>
-                </p>
-                <Pagination.Next
+                </div>
+                <Button
+                  size="sm"
+                  variant="dark"
                   disabled={pagination.active_page === pagination.total_pages}
                   data-navigate="next-page"
                   onClick={(event) => onPageClick(event)}
-                />
-                <Pagination.Last
+                >
+                  &rsaquo;
+                </Button>
+                <Button
+                  size="sm"
+                  variant="dark"
                   disabled={pagination.active_page === pagination.total_pages}
                   data-navigate="last-page"
                   onClick={(event) => onPageClick(event)}
-                />
-              </Pagination>
+                >
+                  &raquo;
+                </Button>
+              </Stack>
             </Col>
           </Row>
         </Container>

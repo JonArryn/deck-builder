@@ -29,11 +29,10 @@ export const CardSearchProvider = ({ children }) => {
   };
 
   const getCards = (searchObj = {}) => {
-    console.log(searchObj);
     if (searchObj === {}) {
       return;
     }
-    console.log("getCards fired");
+
     const searchString = createApiSearchStr(searchObj);
     setIsLoading(true);
     controllerRef.current && controllerRef.current.abort();
@@ -94,7 +93,7 @@ export const CardSearchProvider = ({ children }) => {
             return "";
         }
       });
-    console.log(apiSearchArr.join(" "));
+
     return apiSearchArr.join(" ");
   };
 
@@ -119,7 +118,7 @@ export const CardSearchProvider = ({ children }) => {
   // onClick handler for page number items (stored in pages = useState([]))
   const onPageClick = (event) => {
     window.stop();
-    switch (event.target.closest(".page-link").dataset.navigate) {
+    switch (event.target.dataset.navigate) {
       case "first-page":
         setPagination((prevState) => ({ ...prevState, active_page: 1 }));
         pageJumpRef.current.value = 1;
