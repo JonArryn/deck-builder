@@ -3,7 +3,6 @@ import React from "react";
 import { useState, useEffect, useRef, useContext } from "react";
 // bootstrap
 import Container from "react-bootstrap/Container";
-import Collapse from "react-bootstrap/Collapse";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import CardSearchResults from "../components/CardSearchResults";
@@ -14,15 +13,15 @@ import Button from "react-bootstrap/Button";
 import Spinner from "react-bootstrap/Spinner";
 import Badge from "react-bootstrap/Badge";
 import Stack from "react-bootstrap/Stack";
-import { ReactComponent as ChevronDown } from "../assets/chevron-double-down.svg";
+import Offcanvas from "react-bootstrap/Offcanvas";
 import CardSearchContext from "../context/cardSearch/CardSearchContext";
 
 //  //  TODOS // //
 // show active search form entries under search bar
 // implement sorting
+// set timeout after editing page jump
 // toastify search errors
 // implement grid table search option
-// implement clear search fields and search params in url without a jarring affect on the user
 // implement "back to most recent search" for any page in the app (localStorage?)
 // implement remaining advanced search param options
 // add helper text to advanced search fields
@@ -45,11 +44,19 @@ function CardSearchPage() {
     onPageEntry,
     onPerPageChange,
   } = useContext(CardSearchContext);
+
+  // advanced off-canvas
   const [usingAdvanced, setUsingAdvanced] = useState(false);
+  const handleClose = () => setUsingAdvanced(false);
+  const handleShow = () => setUsingAdvanced(true);
+  const [submitBtnDisable, setSubmitBtnDisable] = useState(true);
+
+  // local state
   const [searchForm, setSearchForm] = useState({
     card_name: "",
     oracle_text: "",
     type_line: "",
+    converted_mana_cost: "",
   });
 
   // // // updates the searchForm state variable as values are entered based on form input ids // // //
@@ -64,6 +71,10 @@ function CardSearchPage() {
   useEffect(() => {
     setSearchForm({ ...currentSearch });
   }, [currentSearch]);
+
+  useEffect(() => {
+    setSubmitBtnDisable(() => Object.values(searchForm).every((entry) => entry === ""));
+  }, [searchForm]);
 
   // // //  to cancel axios requests // // //
   // also sets ref for isMounted and returns on dismount
@@ -96,7 +107,7 @@ function CardSearchPage() {
               onChange={onSearchEntry}
               disabled={isLoading || usingAdvanced}
               data-field="card_name"
-              value={usingAdvanced ? "" : searchForm.card_name}
+              value={usingAdvanced ? "" : searchForm.card_name || ""}
               required
             />
             <Button className="btn btn-dark" type="submit" disabled={isLoading || usingAdvanced}>
@@ -114,23 +125,20 @@ function CardSearchPage() {
       >
         <div className="text-center py-3">
           <Button
-            onClick={() => {
-              setUsingAdvanced(!usingAdvanced);
-            }}
+            onClick={handleShow}
             variant="outline-warning"
             className="text-light"
             aria-controls="advanced-search"
-            aria-expanded={usingAdvanced}
           >
-            Advanced Search <ChevronDown />
+            Use Advanced Search
           </Button>
         </div>
-
-        <Collapse
-          in={usingAdvanced}
-          className="my-3 p-3 bg-dark bg-opacity-50"
-          style={{ borderRadius: "12px" }}
-        >
+      </Container>
+      <Offcanvas show={usingAdvanced} onHide={handleClose} className="bg-dark text-light">
+        <Offcanvas.Header closeButton>
+          <Offcanvas.Title>Advanced Search</Offcanvas.Title>
+        </Offcanvas.Header>
+        <Offcanvas.Body>
           <Form
             id="advanced-search"
             onSubmit={(event) => {
@@ -138,72 +146,90 @@ function CardSearchPage() {
               submitNewSearch(searchForm);
             }}
           >
-            <Row>
-              <Col>
-                <Form.Group as={Row} className="mb-3">
-                  <Form.Label column sm={2}>
-                    Card Name
-                  </Form.Label>
-                  <Col sm={10}>
-                    <Form.Control
-                      data-field="card_name"
-                      type="text"
-                      placeholder="Any word the card name contains"
-                      value={searchForm.card_name}
-                      onChange={onSearchEntry}
-                    />
-                  </Col>
-                </Form.Group>
-              </Col>
-              <Col>
-                <Form.Group as={Row} className="mb-3">
-                  <Form.Label column sm={2}>
-                    Oracle Text
-                  </Form.Label>
-                  <Col sm={10}>
-                    <Form.Control
-                      data-field="oracle_text"
-                      type="text"
-                      placeholder="Any text found in the rules box"
-                      value={searchForm.oracle_text}
-                      onChange={onSearchEntry}
-                    />
-                  </Col>
-                </Form.Group>
-              </Col>
-            </Row>
-            <Form.Group as={Row} className="mb-3">
-              <Form.Label column sm={2}>
-                Type Line
-              </Form.Label>
-              <Col sm={10}>
-                <Form.Control
-                  data-field="type_line"
-                  type="text"
-                  placeholder="Any text found in the rules box"
-                  value={searchForm.type_line}
-                  onChange={onSearchEntry}
-                />
-              </Col>
+            <Form.Group className="mb-2">
+              <Form.Label>Card Name</Form.Label>
+              <Form.Control
+                data-field="card_name"
+                type="text"
+                placeholder="Enter Card Name"
+                value={searchForm.card_name || ""}
+                onChange={onSearchEntry}
+              />
+
+              <Form.Text className="text-warning">
+                <small>Any word the card name contains</small>
+              </Form.Text>
             </Form.Group>
+            <Form.Group className="mb-2">
+              <Form.Label>Oracle Text</Form.Label>
+              <Form.Control
+                data-field="oracle_text"
+                type="text"
+                placeholder="Abilities/Keywords etc."
+                value={searchForm.oracle_text || ""}
+                onChange={onSearchEntry}
+              />
+              <Form.Text className="text-warning">
+                <small>Any text found in the text box of the card</small>
+              </Form.Text>
+            </Form.Group>
+
+            <Form.Group className="mb-2">
+              <Form.Label>Type Line</Form.Label>
+              <Form.Control
+                data-field="type_line"
+                type="text"
+                placeholder="Type/Tribe"
+                value={searchForm.type_line || ""}
+                onChange={onSearchEntry}
+              />
+              <Form.Text className="text-warning">
+                <small>Can include type, sub/super-type, tribe etc.</small>
+              </Form.Text>
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Converted Mana Cost</Form.Label>
+
+              <Form.Control
+                data-field="converted_mana_cost"
+                type="number"
+                placeholder="Card CMC"
+                value={searchForm.converted_mana_cost || ""}
+                onChange={onSearchEntry}
+              />
+              <Form.Text className="text-warning">
+                <small>Total mana cost to cast the spell</small>
+              </Form.Text>
+            </Form.Group>
+
             <Stack direction="horizontal" className="justify-content-center" gap={3}>
-              <Button variant="success" type="submit" disabled={isLoading}>
+              <Button
+                variant="success"
+                type="submit"
+                disabled={isLoading || submitBtnDisable}
+                onClick={handleClose}
+              >
                 {isLoading ? <Spinner animation="border" /> : "Submit Search"}
               </Button>
               <div className="vr text-light"></div>
               <Button
                 variant="danger"
-                className="align-end"
                 onClick={() => {
-                  setSearchForm(() => ({ card_name: "", oracle_text: "", type_line: "" }));
+                  setSearchForm(() => ({
+                    card_name: "",
+                    oracle_text: "",
+                    type_line: "",
+                    converted_mana_cost: "",
+                  }));
                 }}
               >
                 Clear
               </Button>
             </Stack>
           </Form>
-        </Collapse>
-      </Container>
+        </Offcanvas.Body>
+      </Offcanvas>
       {searchResults && (
         <Container className="mb-2">
           <Row className="justify-content-end g-3">

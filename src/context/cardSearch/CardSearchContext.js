@@ -25,8 +25,11 @@ export const CardSearchProvider = ({ children }) => {
     setCurrentSearch(() => ({ ...newQuery }));
     getCards(newQuery);
     setPagination((prevState) => ({ ...prevState, active_page: 1 }));
-    pageJumpRef.current.value = 1;
   };
+
+  // useEffect(() => {
+
+  // }, [searchResults]);
 
   const getCards = (searchObj = {}) => {
     if (searchObj === {}) {
@@ -54,9 +57,12 @@ export const CardSearchProvider = ({ children }) => {
       })
       .catch((error) => {
         console.log(error.message);
-        setSearchResults({});
+        setSearchResults([]);
       })
-      .finally(() => setIsLoading(false));
+      .finally(() => {
+        setIsLoading(false);
+        pageJumpRef.current.value = 1;
+      });
   };
 
   const getCardsNextPage = (pageUri) => {
@@ -89,6 +95,8 @@ export const CardSearchProvider = ({ children }) => {
               .split(" ")
               .map((value) => `type:${value}`)
               .join(" ")})`;
+          case "converted_mana_cost":
+            return `cmc=${value}`;
           default:
             return "";
         }
